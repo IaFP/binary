@@ -59,6 +59,8 @@ library
 
   if impl(ghc >= 8.0)
     ghc-options: -Wcompat -Wnoncanonical-monad-instances -Wnoncanonical-monadfail-instances
+  if impl(ghc >= 8.10)
+    build-depends: ghc-prim
 
 test-suite qc
   type:  exitcode-stdio-1.0

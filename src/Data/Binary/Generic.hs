@@ -6,6 +6,9 @@
 #if __GLASGOW_HASKELL__ >= 800
 #define HAS_DATA_KIND
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, ConstrainedClassMethods #-}
+#endif
 
 -----------------------------------------------------------------------------
 -- |
@@ -38,6 +41,9 @@ import Data.Kind
 #endif
 import GHC.Generics
 import Prelude -- Silence AMP warning.
+-- #if MIN_VERSION_base(4,14,0)
+-- import GHC.Types (Total)
+-- #endif
 
 -- Type without constructors
 instance GBinaryPut V1 where
@@ -88,14 +94,16 @@ instance Binary a => GBinaryGet (K1 i a) where
 #define GETSUM(WORD) GUARD(WORD) = (get :: Get WORD) >>= checkGetSum (fromIntegral size)
 
 instance ( GSumPut  a, GSumPut  b
-         , SumSize    a, SumSize    b) => GBinaryPut (a :+: b) where
+         , SumSize  a, SumSize  b
+         ) => GBinaryPut (a :+: b) where
     gput | PUTSUM(Word8) | PUTSUM(Word16) | PUTSUM(Word32) | PUTSUM(Word64)
          | otherwise = sizeError "encode" size
       where
         size = unTagged (sumSize :: Tagged (a :+: b) Word64)
 
 instance ( GSumGet  a, GSumGet  b
-         , SumSize    a, SumSize    b) => GBinaryGet (a :+: b) where
+         , SumSize  a, SumSize  b
+         ) => GBinaryGet (a :+: b) where
     gget | GETSUM(Word8) | GETSUM(Word16) | GETSUM(Word32) | GETSUM(Word64)
          | otherwise = sizeError "decode" size
       where

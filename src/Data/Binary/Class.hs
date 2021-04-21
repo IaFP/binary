@@ -17,6 +17,9 @@
 #if MIN_VERSION_base(4,7,0)
 #define HAS_FIXED_CONSTRUCTOR
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, TypeFamilies, ConstrainedClassMethods, UndecidableSuperClasses #-}
+#endif
 
 -----------------------------------------------------------------------------
 -- |
@@ -114,6 +117,10 @@ import qualified Data.Foldable as Fold
 
 import GHC.Fingerprint
 
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
+
 import Data.Version (Version(..))
 
 ------------------------------------------------------------------------
@@ -157,10 +164,18 @@ class Binary t where
     putList :: [t] -> Put
     putList = defaultPutList
 
-    default put :: (Generic t, GBinaryPut (Rep t)) => t -> Put
+    default put :: (Generic t, GBinaryPut (Rep t)
+#if MIN_VERSION_base(4,14,0)
+                   , Total (Rep t)
+#endif
+                   ) => t -> Put
     put = gput . from
 
-    default get :: (Generic t, GBinaryGet (Rep t)) => Get t
+    default get :: (Generic t, GBinaryGet (Rep t)
+#if MIN_VERSION_base(4,14,0)
+                   , Total (Rep t)
+#endif
+                   ) => Get t
     get = to `fmap` gget
 
 {-# INLINE defaultPutList #-}
@@ -967,7 +982,7 @@ instance Binary TypeLitSort where
           1 -> pure TypeLitNat
           _ -> fail "GHCi.TH.Binary.putTypeLitSort: invalid tag"
 
-putTypeRep :: TypeRep a -> Put
+putTypeRep ::  TypeRep a -> Put
 -- Special handling for TYPE, (->), and RuntimeRep due to recursive kind
 -- relations.
 -- See Note [Mutually recursive representations of primitive types]
@@ -1044,4 +1059,5 @@ instance Binary SomeTypeRep where
     put (SomeTypeRep rep) = putTypeRep rep
     get = getSomeTypeRep
 #endif
+
 

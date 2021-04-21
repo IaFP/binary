@@ -1,4 +1,7 @@
 {-# LANGUAGE CPP, RankNTypes, MagicHash, BangPatterns, TypeFamilies #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, TypeFamilies #-}
+#endif
 
 -- CPP C style pre-precessing, the #if defined lines
 -- RankNTypes forall r. statement

@@ -4,6 +4,9 @@
 #if defined(__GLASGOW_HASKELL__) && !defined(__HADDOCK__)
 #include "MachDeps.h"
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors #-}
+#endif
 
 -----------------------------------------------------------------------------
 -- |

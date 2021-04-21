@@ -15,3 +15,4 @@ dist-install
 ghc.mk
 .cabal-sandbox
 cabal.sandbox.config
+*.hs.bak

@@ -5,6 +5,9 @@
 #if MIN_VERSION_base(4,9,0)
 #define HAS_SEMIGROUP
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors #-}
+#endif
 
 -----------------------------------------------------------------------------
 -- |
