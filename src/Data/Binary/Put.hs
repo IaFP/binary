@@ -1,6 +1,10 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
+#if __GLASGOW_HASKELL__ >= 710 && __GLASGOW_HASKELL__ < 810
 {-# LANGUAGE Safe #-}
+#else
+{-# LANGUAGE Trustworthy #-}
+#endif
 
 #if MIN_VERSION_base(4,9,0)
 #define HAS_SEMIGROUP
@@ -101,6 +105,9 @@ import Data.Semigroup
 
 import Control.Applicative
 import Prelude -- Silence AMP warning.
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- needed for casting Floats/Doubles to words.
 import Data.Binary.FloatCast (floatToWord, doubleToWord)
@@ -115,6 +122,10 @@ sndS (PairS _ b) = b
 
 -- | The PutM type. A Writer monad over the efficient Builder monoid.
 newtype PutM a = Put { unPut :: PairS a }
+#if MIN_VERSION_base(4,14,0)
+instance Total (PutM)
+instance Total (PairS)
+#endif
 
 -- | Put merely lifts Builder into a Writer monad, applied to ().
 type Put = PutM ()

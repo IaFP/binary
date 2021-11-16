@@ -118,7 +118,7 @@ import qualified Data.Foldable as Fold
 import GHC.Fingerprint
 
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (Total)
+import GHC.Types (type (@@), Total)
 #endif
 
 import Data.Version (Version(..))
@@ -798,7 +798,11 @@ instance Binary a => Binary (Monoid.Last a) where
 
 #if MIN_VERSION_base(4,8,0)
 -- | @since 0.8.4.0
-instance Binary (f a) => Binary (Monoid.Alt f a) where
+instance (Binary (f a)
+#if MIN_VERSION_base(4,14,0)
+         , f @@ a
+#endif         
+         ) => Binary (Monoid.Alt f a) where
   get = fmap Monoid.Alt get
   put = put . Monoid.getAlt
 #endif
@@ -981,6 +985,7 @@ instance Binary TypeLitSort where
           0 -> pure TypeLitSymbol
           1 -> pure TypeLitNat
           _ -> fail "GHCi.TH.Binary.putTypeLitSort: invalid tag"
+
 
 putTypeRep ::  TypeRep a -> Put
 -- Special handling for TYPE, (->), and RuntimeRep due to recursive kind

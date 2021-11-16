@@ -54,6 +54,9 @@ import Control.Monad
 #if MIN_VERSION_base(4,9,0)
 import qualified Control.Monad.Fail as Fail
 #endif
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 import Data.Binary.Internal ( accursedUnutterablePerformIO )
 
@@ -88,6 +91,9 @@ newtype Get a = C { runCont :: forall r.
                                B.ByteString ->
                                Success a r ->
                                Decoder   r }
+#if MIN_VERSION_base(4,14,0)
+instance Total (Get)
+#endif
 
 type Success a r = B.ByteString -> a -> Decoder r
 
