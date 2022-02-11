@@ -4,6 +4,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE Trustworthy #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators, RankNTypes #-}
+#endif
 
 #if __GLASGOW_HASKELL__ >= 706
 {-# LANGUAGE PolyKinds #-}
@@ -123,7 +126,9 @@ import qualified Data.Foldable as Fold
 import GHC.Fingerprint
 
 import Data.Version (Version(..))
-
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type (@), Total)
+#endif 
 ------------------------------------------------------------------------
 
 -- Factored into two classes because this makes GHC optimize the
@@ -165,10 +170,18 @@ class Binary t where
     putList :: [t] -> Put
     putList = defaultPutList
 
-    default put :: (Generic t, GBinaryPut (Rep t)) => t -> Put
+    default put :: (
+#if MIN_VERSION_base(4,16,0)
+      forall x. Rep t @ x,
+#endif
+      Generic t, GBinaryPut (Rep t)) => t -> Put
     put = gput . from
 
-    default get :: (Generic t, GBinaryGet (Rep t)) => Get t
+    default get :: (
+#if MIN_VERSION_base(4,16,0)
+       forall x. Rep t @ x, 
+#endif
+       Generic t, GBinaryGet (Rep t)) => Get t
     get = to `fmap` gget
 
 {-# INLINE defaultPutList #-}

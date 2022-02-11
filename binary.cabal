@@ -52,7 +52,7 @@ library
                    Data.Binary.Internal,
                    Data.Binary.Generic,
                    Data.Binary.FloatCast
-  if impl(ghc <= 7.6)
+  if impl(ghc <= 7.6) || impl(ghc >= 9.1)
     -- prior to ghc-7.4 generics lived in ghc-prim
     build-depends: ghc-prim
 

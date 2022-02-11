@@ -1,6 +1,11 @@
 {-# LANGUAGE BangPatterns, CPP, FlexibleInstances, KindSignatures,
     ScopedTypeVariables, TypeOperators, TypeSynonymInstances #-}
+#if __GLASGOW_HASKELL__ >= 702 && __GLASGOW_HASKELL__ < 903
 {-# LANGUAGE Safe #-}
+#else  
+{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+#endif
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 #if __GLASGOW_HASKELL__ >= 800
@@ -38,6 +43,9 @@ import Data.Kind
 #endif
 import GHC.Generics
 import Prelude -- Silence AMP warning.
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 
 -- Type without constructors
 instance GBinaryPut V1 where
@@ -54,17 +62,33 @@ instance GBinaryGet U1 where
     gget    = return U1
 
 -- Product: constructor with parameters
-instance (GBinaryPut a, GBinaryPut b) => GBinaryPut (a :*: b) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+   Total a, Total b,                                  
+#endif
+  GBinaryPut a, GBinaryPut b) => GBinaryPut (a :*: b) where
     gput (x :*: y) = gput x <> gput y
 
-instance (GBinaryGet a, GBinaryGet b) => GBinaryGet (a :*: b) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+   Total a, Total b,                                  
+#endif
+  GBinaryGet a, GBinaryGet b) => GBinaryGet (a :*: b) where
     gget = (:*:) <$> gget <*> gget
 
 -- Metadata (constructor name, etc)
-instance GBinaryPut a => GBinaryPut (M1 i c a) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+   Total a,                                  
+#endif
+  GBinaryPut a) => GBinaryPut (M1 i c a) where
     gput = gput . unM1
 
-instance GBinaryGet a => GBinaryGet (M1 i c a) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+   Total a,                                  
+#endif
+  GBinaryGet a) => GBinaryGet (M1 i c a) where
     gget = M1 <$> gget
 
 -- Constants, additional parameters, and rank-1 recursion
@@ -87,14 +111,23 @@ instance Binary a => GBinaryGet (K1 i a) where
 #define PUTSUM(WORD) GUARD(WORD) = putSum (0 :: WORD) (fromIntegral size)
 #define GETSUM(WORD) GUARD(WORD) = (get :: Get WORD) >>= checkGetSum (fromIntegral size)
 
-instance ( GSumPut  a, GSumPut  b
-         , SumSize    a, SumSize    b) => GBinaryPut (a :+: b) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+          Total a, Total b,
+#endif
+           GSumPut  a, GSumPut  b
+         , SumSize    a, SumSize    b
+         ) => GBinaryPut (a :+: b) where
     gput | PUTSUM(Word8) | PUTSUM(Word16) | PUTSUM(Word32) | PUTSUM(Word64)
          | otherwise = sizeError "encode" size
       where
         size = unTagged (sumSize :: Tagged (a :+: b) Word64)
 
-instance ( GSumGet  a, GSumGet  b
+instance (
+#if MIN_VERSION_base(4,16,0)
+          Total a, Total b,
+#endif
+           GSumGet  a, GSumGet  b
          , SumSize    a, SumSize    b) => GBinaryGet (a :+: b) where
     gget | GETSUM(Word8) | GETSUM(Word16) | GETSUM(Word32) | GETSUM(Word64)
          | otherwise = sizeError "decode" size
@@ -119,14 +152,22 @@ class GSumGet f where
 class GSumPut f where
     putSum :: (Num w, Bits w, Binary w) => w -> w -> f a -> Put
 
-instance (GSumGet a, GSumGet b) => GSumGet (a :+: b) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+  Total a, Total b, 
+#endif
+  GSumGet a, GSumGet b) => GSumGet (a :+: b) where
     getSum !code !size | code < sizeL = L1 <$> getSum code           sizeL
                        | otherwise    = R1 <$> getSum (code - sizeL) sizeR
         where
           sizeL = size `shiftR` 1
           sizeR = size - sizeL
 
-instance (GSumPut a, GSumPut b) => GSumPut (a :+: b) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+    Total a, Total b,
+#endif
+  GSumPut a, GSumPut b) => GSumPut (a :+: b) where
     putSum !code !size s = case s of
                              L1 x -> putSum code           sizeL x
                              R1 x -> putSum (code + sizeL) sizeR x
@@ -134,10 +175,18 @@ instance (GSumPut a, GSumPut b) => GSumPut (a :+: b) where
           sizeL = size `shiftR` 1
           sizeR = size - sizeL
 
-instance GBinaryGet a => GSumGet (C1 c a) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+   Total a,
+#endif
+  GBinaryGet a) => GSumGet (C1 c a) where
     getSum _ _ = gget
 
-instance GBinaryPut a => GSumPut (C1 c a) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+   Total a,
+#endif
+  GBinaryPut a) => GSumPut (C1 c a) where
     putSum !code _ x = put code <> gput x
 
 ------------------------------------------------------------------------
