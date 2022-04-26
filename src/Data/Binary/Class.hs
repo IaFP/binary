@@ -127,7 +127,7 @@ import GHC.Fingerprint
 
 import Data.Version (Version(..))
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (type (@), Total)
+import GHC.Types (type (@))
 #endif 
 ------------------------------------------------------------------------
 
